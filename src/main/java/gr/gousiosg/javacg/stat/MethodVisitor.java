@@ -25,7 +25,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package gr.gousiosg.javacg.stat;
 
 import org.apache.bcel.classfile.JavaClass;
@@ -41,37 +40,50 @@ import org.apache.bcel.generic.InstructionConstants;
 import org.apache.bcel.generic.InstructionHandle;
 import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.ReturnInstruction;
+import org.apache.bcel.generic.Type;
 
 /**
- * The simplest of method visitors, prints any invoked method
- * signature for all method invocations.
- * 
+ * The simplest of method visitors, prints any invoked method signature for all method invocations.
+ *
  * Class copied with modifications from CJKM: http://www.spinellis.gr/sw/ckjm/
  */
 public class MethodVisitor extends EmptyVisitor {
 
     JavaClass visitedClass;
-    private MethodGen mg;
-    private ConstantPoolGen cp;
-    private String format;
+    private final MethodGen mg;
+    private final ConstantPoolGen cp;
+    private final String format;
 
     public MethodVisitor(MethodGen m, JavaClass jc) {
         visitedClass = jc;
         mg = m;
         cp = mg.getConstantPool();
-        format = "M:" + visitedClass.getClassName() + ":" + mg.getName() 
-            + " " + "(%s)%s:%s";
+        /*
+         {
+         class: class,
+         method: method,
+         invokeType: {enum:INVOKEVIRTUAL,INVOKEINTERFACE,INVOKESPECIAL,INVOKESTATIC},
+         reference: {
+         class: class,
+         method: method
+         args:
+         }
+         }
+         */
+        format = "{\"class\":\"" + visitedClass.getClassName() + "\",\"method\":\"" + mg.getName() + "\",\"invokeType\":\"%s\",\"reference\":{\"class\":\"%s\",\"method\":\"%s\",\"args\":\"%s\"}}";
     }
 
     public void start() {
-        if (mg.isAbstract() || mg.isNative())
+        if (mg.isAbstract() || mg.isNative()) {
             return;
-        for (InstructionHandle ih = mg.getInstructionList().getStart(); 
+        }
+        for (InstructionHandle ih = mg.getInstructionList().getStart();
                 ih != null; ih = ih.getNext()) {
             Instruction i = ih.getInstruction();
-            
-            if (!visitInstruction(i))
+
+            if (!visitInstruction(i)) {
                 i.accept(this);
+            }
         }
     }
 
@@ -79,27 +91,38 @@ public class MethodVisitor extends EmptyVisitor {
         short opcode = i.getOpcode();
 
         return ((InstructionConstants.INSTRUCTIONS[opcode] != null)
-                && !(i instanceof ConstantPushInstruction) 
+                && !(i instanceof ConstantPushInstruction)
                 && !(i instanceof ReturnInstruction));
+    }
+
+    private String getTypeString(Type[] types) {
+        StringBuilder buff = new StringBuilder();
+        for (int x = 0; types != null && x < types.length; x++) {
+            buff.append(types[x].toString());
+            if (x + 1 < types.length) {
+                buff.append(",");
+            }
+        }
+        return buff.toString();
     }
 
     @Override
     public void visitINVOKEVIRTUAL(INVOKEVIRTUAL i) {
-        System.out.println(String.format(format,"M",i.getReferenceType(cp),i.getMethodName(cp)));
+        System.out.println(String.format(format, "INVOKEVIRTUAL", i.getReferenceType(cp), i.getMethodName(cp), getTypeString(i.getArgumentTypes(cp))));
     }
 
     @Override
     public void visitINVOKEINTERFACE(INVOKEINTERFACE i) {
-        System.out.println(String.format(format,"I",i.getReferenceType(cp),i.getMethodName(cp)));
+        System.out.println(String.format(format, "INVOKEINTERFACE", i.getReferenceType(cp), i.getMethodName(cp), getTypeString(i.getArgumentTypes(cp))));
     }
 
     @Override
     public void visitINVOKESPECIAL(INVOKESPECIAL i) {
-        System.out.println(String.format(format,"O",i.getReferenceType(cp),i.getMethodName(cp)));
+        System.out.println(String.format(format, "INVOKESPECIAL", i.getReferenceType(cp), i.getMethodName(cp), getTypeString(i.getArgumentTypes(cp))));
     }
 
     @Override
     public void visitINVOKESTATIC(INVOKESTATIC i) {
-        System.out.println(String.format(format,"S",i.getReferenceType(cp),i.getMethodName(cp)));
+        System.out.println(String.format(format, "INVOKESTATIC", i.getReferenceType(cp), i.getMethodName(cp), getTypeString(i.getArgumentTypes(cp))));
     }
 }
