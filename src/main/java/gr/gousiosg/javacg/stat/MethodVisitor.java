@@ -61,16 +61,36 @@ public class MethodVisitor extends EmptyVisitor {
         /*
          {
          class: class,
+         implements:[list],
          method: method,
-         invokeType: {enum:INVOKEVIRTUAL,INVOKEINTERFACE,INVOKESPECIAL,INVOKESTATIC},
-         reference: {
+         args: args,
+         invoke: {
+         type: {enum:virtual,interface,special,static},
          class: class,
-         method: method
-         args:
+         method: method,
+         args:args
          }
          }
          */
-        format = "{\"class\":\"" + visitedClass.getClassName() + "\",\"method\":\"" + mg.getName() + "\",\"invokeType\":\"%s\",\"reference\":{\"class\":\"%s\",\"method\":\"%s\",\"args\":\"%s\"}}";
+        String interfaces = null;
+        for (int x = 0; visitedClass.getInterfaceNames() != null && x < visitedClass.getInterfaceNames().length; x++) {
+            String i = visitedClass.getInterfaceNames()[x];
+            if (interfaces == null) {
+                interfaces = "";
+            }
+            interfaces += ("\"" + i + "\"");
+            if (x + 1 < visitedClass.getInterfaceNames().length) {
+                interfaces += ",";
+            }
+        }
+        String className = visitedClass.getClassName().substring(visitedClass.getClassName().lastIndexOf('.') + 1);
+        format = "{\"package\":\"" + visitedClass.getPackageName()
+                + "\",\"class\":\"" + className
+                + "\",\"implements\":[" + interfaces
+                + "],\"method\":\"" + mg.getName()
+                + "\",\"args\":\"" + getTypeString(mg.getArgumentTypes())
+                + "\",\"returning\":\"" + mg.getReturnType().toString()
+                + "\",\"invoke\":{\"type\":\"%s\",\"package\":\"%s\",\"class\":\"%s\",\"method\":\"%s\",\"args\":\"%s\",\"returning\":\"%s\"}}";
     }
 
     public void start() {
@@ -108,21 +128,29 @@ public class MethodVisitor extends EmptyVisitor {
 
     @Override
     public void visitINVOKEVIRTUAL(INVOKEVIRTUAL i) {
-        System.out.println(String.format(format, "INVOKEVIRTUAL", i.getReferenceType(cp), i.getMethodName(cp), getTypeString(i.getArgumentTypes(cp))));
+        String packageName = i.getReferenceType(cp).toString().substring(0, i.getReferenceType(cp).toString().lastIndexOf('.'));
+        String className = i.getReferenceType(cp).toString().substring(i.getReferenceType(cp).toString().lastIndexOf('.') + 1);
+        System.out.println(String.format(format, "virtual", packageName, className, i.getMethodName(cp), getTypeString(i.getArgumentTypes(cp)), i.getReturnType(cp).toString()));
     }
 
     @Override
     public void visitINVOKEINTERFACE(INVOKEINTERFACE i) {
-        System.out.println(String.format(format, "INVOKEINTERFACE", i.getReferenceType(cp), i.getMethodName(cp), getTypeString(i.getArgumentTypes(cp))));
+        String packageName = i.getReferenceType(cp).toString().substring(0, i.getReferenceType(cp).toString().lastIndexOf('.'));
+        String className = i.getReferenceType(cp).toString().substring(i.getReferenceType(cp).toString().lastIndexOf('.') + 1);
+        System.out.println(String.format(format, "interface", packageName, className, i.getMethodName(cp), getTypeString(i.getArgumentTypes(cp)), i.getReturnType(cp).toString()));
     }
 
     @Override
     public void visitINVOKESPECIAL(INVOKESPECIAL i) {
-        System.out.println(String.format(format, "INVOKESPECIAL", i.getReferenceType(cp), i.getMethodName(cp), getTypeString(i.getArgumentTypes(cp))));
+        String packageName = i.getReferenceType(cp).toString().substring(0, i.getReferenceType(cp).toString().lastIndexOf('.'));
+        String className = i.getReferenceType(cp).toString().substring(i.getReferenceType(cp).toString().lastIndexOf('.') + 1);
+        System.out.println(String.format(format, "special", packageName, className, i.getMethodName(cp), getTypeString(i.getArgumentTypes(cp)), i.getReturnType(cp).toString()));
     }
 
     @Override
     public void visitINVOKESTATIC(INVOKESTATIC i) {
-        System.out.println(String.format(format, "INVOKESTATIC", i.getReferenceType(cp), i.getMethodName(cp), getTypeString(i.getArgumentTypes(cp))));
+        String packageName = i.getReferenceType(cp).toString().substring(0, i.getReferenceType(cp).toString().lastIndexOf('.'));
+        String className = i.getReferenceType(cp).toString().substring(i.getReferenceType(cp).toString().lastIndexOf('.') + 1);
+        System.out.println(String.format(format, "static", packageName, className, i.getMethodName(cp), getTypeString(i.getArgumentTypes(cp)), i.getReturnType(cp).toString()));
     }
 }

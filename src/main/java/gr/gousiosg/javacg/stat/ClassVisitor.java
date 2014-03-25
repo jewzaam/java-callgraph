@@ -25,7 +25,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package gr.gousiosg.javacg.stat;
 
 import org.apache.bcel.classfile.Constant;
@@ -35,30 +34,31 @@ import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Method;
 import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.MethodGen;
+import org.apache.bcel.generic.Type;
 
 /**
- * The simplest of class visitors, invokes the method visitor class for each
- * method found.
+ * The simplest of class visitors, invokes the method visitor class for each method found.
  */
 public class ClassVisitor extends EmptyVisitor {
 
     private final JavaClass clazz;
     private final ConstantPoolGen constants;
     private final String classReferenceFormat;
-    
+
     public ClassVisitor(JavaClass jc) {
         clazz = jc;
         constants = new ConstantPoolGen(clazz.getConstantPool());
-        
+
         /*
          {
-         class: class,
+         {class,interface}: name,
          reference: {
          class: class,
          }
          }
          */
-        classReferenceFormat = "{\"class\":\"" + clazz.getClassName() + "\",\"reference\":{\"class\":\"%s\"}}";
+        String className = clazz.getClassName().substring(clazz.getClassName().lastIndexOf('.') + 1);
+        classReferenceFormat = "{\"package\":\"" + clazz.getPackageName() + "\"class\":\"" + className + "\",\"reference\":{\"class\":\"%s\"}}";
     }
 
     @Override
@@ -67,6 +67,12 @@ public class ClassVisitor extends EmptyVisitor {
         Method[] methods = jc.getMethods();
         for (Method method : methods) {
             method.accept(this);
+            if (jc.isInterface()) {
+                String className = clazz.getClassName().substring(clazz.getClassName().lastIndexOf('.') + 1);
+                System.out.println("{\"package\":\"" + clazz.getPackageName() + "\",\"class\":\"" + className + "\",\"method\":\"" + method.getName()
+                        + "\",\"args\":\"" + getTypeString(method.getArgumentTypes())
+                        + "\",\"returning\":\"" + method.getReturnType().toString() + "\"}");
+            }
         }
     }
 
@@ -74,22 +80,32 @@ public class ClassVisitor extends EmptyVisitor {
     public void visitConstantPool(ConstantPool constantPool) {
         for (int i = 0; i < constantPool.getLength(); i++) {
             Constant constant = constantPool.getConstant(i);
-            if (constant == null)
+            if (constant == null) {
                 continue;
+            }
             if (constant.getTag() == 7) {
-                String referencedClass = 
-                    constantPool.constantToString(constant);
-                System.out.println(String.format(classReferenceFormat,
-                        referencedClass));
+                String referencedClass = constantPool.constantToString(constant);
+                System.out.println(String.format(classReferenceFormat, referencedClass));
             }
         }
+    }
+
+    private String getTypeString(Type[] types) {
+        StringBuilder buff = new StringBuilder();
+        for (int x = 0; types != null && x < types.length; x++) {
+            buff.append(types[x].toString());
+            if (x + 1 < types.length) {
+                buff.append(",");
+            }
+        }
+        return buff.toString();
     }
 
     @Override
     public void visitMethod(Method method) {
         MethodGen mg = new MethodGen(method, clazz.getClassName(), constants);
         MethodVisitor visitor = new MethodVisitor(mg, clazz);
-        visitor.start(); 
+        visitor.start();
     }
 
     public void start() {
