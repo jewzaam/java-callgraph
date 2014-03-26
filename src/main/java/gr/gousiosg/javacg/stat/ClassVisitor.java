@@ -43,22 +43,10 @@ public class ClassVisitor extends EmptyVisitor {
 
     private final JavaClass clazz;
     private final ConstantPoolGen constants;
-    private final String classReferenceFormat;
 
     public ClassVisitor(JavaClass jc) {
         clazz = jc;
         constants = new ConstantPoolGen(clazz.getConstantPool());
-
-        /*
-         {
-         {class,interface}: name,
-         reference: {
-         class: class,
-         }
-         }
-         */
-        String className = clazz.getClassName().substring(clazz.getClassName().lastIndexOf('.') + 1);
-        classReferenceFormat = "{\"package\":\"" + clazz.getPackageName() + "\"class\":\"" + className + "\",\"reference\":{\"class\":\"%s\"}}";
     }
 
     @Override
@@ -68,37 +56,9 @@ public class ClassVisitor extends EmptyVisitor {
         for (Method method : methods) {
             method.accept(this);
             if (jc.isInterface()) {
-                String className = clazz.getClassName().substring(clazz.getClassName().lastIndexOf('.') + 1);
-                System.out.println("{\"package\":\"" + clazz.getPackageName() + "\",\"class\":\"" + className + "\",\"method\":\"" + method.getName()
-                        + "\",\"args\":\"" + getTypeString(method.getArgumentTypes())
-                        + "\",\"returning\":\"" + method.getReturnType().toString() + "\"}");
+                CallGraphCache.register(jc, method);
             }
         }
-    }
-
-    @Override
-    public void visitConstantPool(ConstantPool constantPool) {
-        for (int i = 0; i < constantPool.getLength(); i++) {
-            Constant constant = constantPool.getConstant(i);
-            if (constant == null) {
-                continue;
-            }
-            if (constant.getTag() == 7) {
-                String referencedClass = constantPool.constantToString(constant);
-                System.out.println(String.format(classReferenceFormat, referencedClass));
-            }
-        }
-    }
-
-    private String getTypeString(Type[] types) {
-        StringBuilder buff = new StringBuilder();
-        for (int x = 0; types != null && x < types.length; x++) {
-            buff.append(types[x].toString());
-            if (x + 1 < types.length) {
-                buff.append(",");
-            }
-        }
-        return buff.toString();
     }
 
     @Override

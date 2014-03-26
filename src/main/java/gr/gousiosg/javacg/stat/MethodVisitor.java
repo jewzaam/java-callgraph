@@ -40,7 +40,6 @@ import org.apache.bcel.generic.InstructionConstants;
 import org.apache.bcel.generic.InstructionHandle;
 import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.ReturnInstruction;
-import org.apache.bcel.generic.Type;
 
 /**
  * The simplest of method visitors, prints any invoked method signature for all method invocations.
@@ -52,45 +51,11 @@ public class MethodVisitor extends EmptyVisitor {
     JavaClass visitedClass;
     private final MethodGen mg;
     private final ConstantPoolGen cp;
-    private final String format;
 
     public MethodVisitor(MethodGen m, JavaClass jc) {
         visitedClass = jc;
         mg = m;
         cp = mg.getConstantPool();
-        /*
-         {
-         class: class,
-         implements:[list],
-         method: method,
-         args: args,
-         invoke: {
-         type: {enum:virtual,interface,special,static},
-         class: class,
-         method: method,
-         args:args
-         }
-         }
-         */
-        String interfaces = null;
-        for (int x = 0; visitedClass.getInterfaceNames() != null && x < visitedClass.getInterfaceNames().length; x++) {
-            String i = visitedClass.getInterfaceNames()[x];
-            if (interfaces == null) {
-                interfaces = "";
-            }
-            interfaces += ("\"" + i + "\"");
-            if (x + 1 < visitedClass.getInterfaceNames().length) {
-                interfaces += ",";
-            }
-        }
-        String className = visitedClass.getClassName().substring(visitedClass.getClassName().lastIndexOf('.') + 1);
-        format = "{\"package\":\"" + visitedClass.getPackageName()
-                + "\",\"class\":\"" + className
-                + "\",\"implements\":[" + interfaces
-                + "],\"method\":\"" + mg.getName()
-                + "\",\"args\":\"" + getTypeString(mg.getArgumentTypes())
-                + "\",\"returning\":\"" + mg.getReturnType().toString()
-                + "\",\"invoke\":{\"type\":\"%s\",\"package\":\"%s\",\"class\":\"%s\",\"method\":\"%s\",\"args\":\"%s\",\"returning\":\"%s\"}}";
     }
 
     public void start() {
@@ -115,42 +80,23 @@ public class MethodVisitor extends EmptyVisitor {
                 && !(i instanceof ReturnInstruction));
     }
 
-    private String getTypeString(Type[] types) {
-        StringBuilder buff = new StringBuilder();
-        for (int x = 0; types != null && x < types.length; x++) {
-            buff.append(types[x].toString());
-            if (x + 1 < types.length) {
-                buff.append(",");
-            }
-        }
-        return buff.toString();
-    }
-
     @Override
     public void visitINVOKEVIRTUAL(INVOKEVIRTUAL i) {
-        String packageName = i.getReferenceType(cp).toString().substring(0, i.getReferenceType(cp).toString().lastIndexOf('.'));
-        String className = i.getReferenceType(cp).toString().substring(i.getReferenceType(cp).toString().lastIndexOf('.') + 1);
-        System.out.println(String.format(format, "virtual", packageName, className, i.getMethodName(cp), getTypeString(i.getArgumentTypes(cp)), i.getReturnType(cp).toString()));
+        CallGraphCache.register(visitedClass, mg, i);
     }
 
     @Override
     public void visitINVOKEINTERFACE(INVOKEINTERFACE i) {
-        String packageName = i.getReferenceType(cp).toString().substring(0, i.getReferenceType(cp).toString().lastIndexOf('.'));
-        String className = i.getReferenceType(cp).toString().substring(i.getReferenceType(cp).toString().lastIndexOf('.') + 1);
-        System.out.println(String.format(format, "interface", packageName, className, i.getMethodName(cp), getTypeString(i.getArgumentTypes(cp)), i.getReturnType(cp).toString()));
+        CallGraphCache.register(visitedClass, mg, i);
     }
 
     @Override
     public void visitINVOKESPECIAL(INVOKESPECIAL i) {
-        String packageName = i.getReferenceType(cp).toString().substring(0, i.getReferenceType(cp).toString().lastIndexOf('.'));
-        String className = i.getReferenceType(cp).toString().substring(i.getReferenceType(cp).toString().lastIndexOf('.') + 1);
-        System.out.println(String.format(format, "special", packageName, className, i.getMethodName(cp), getTypeString(i.getArgumentTypes(cp)), i.getReturnType(cp).toString()));
+        CallGraphCache.register(visitedClass, mg, i);
     }
 
     @Override
     public void visitINVOKESTATIC(INVOKESTATIC i) {
-        String packageName = i.getReferenceType(cp).toString().substring(0, i.getReferenceType(cp).toString().lastIndexOf('.'));
-        String className = i.getReferenceType(cp).toString().substring(i.getReferenceType(cp).toString().lastIndexOf('.') + 1);
-        System.out.println(String.format(format, "static", packageName, className, i.getMethodName(cp), getTypeString(i.getArgumentTypes(cp)), i.getReturnType(cp).toString()));
+        CallGraphCache.register(visitedClass, mg, i);
     }
 }
