@@ -11,18 +11,27 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import gr.gousiosg.javacg.stat.model.CGClass;
+import gr.gousiosg.javacg.stat.model.CGMethod;
+import java.math.BigDecimal;
 import java.util.List;
-import org.apache.bcel.classfile.JavaClass;
-import org.apache.bcel.classfile.Method;
-import org.apache.bcel.generic.ConstantPoolGen;
-import org.apache.bcel.generic.InvokeInstruction;
-import org.apache.bcel.generic.Type;
 
 /**
  *
  * @author nmalik
  */
 public class JsonNodeParser {
+
+    protected static void safePut(ObjectNode object, String key, String value) {
+        if (value != null) {
+            object.put(key, value);
+        }
+    }
+
+    protected static void put(ObjectNode object, String key, JsonNode value) {
+        if (value != null) {
+            object.put(key, value);
+        }
+    }
 
     public static ObjectNode objectNode() {
         return new ObjectNode(JsonNodeFactory.instance);
@@ -45,16 +54,16 @@ public class JsonNodeParser {
 
         ObjectNode output = objectNode();
         ObjectNode clazz = output.objectNode();
-        output.put("class", clazz);
-        clazz.put("package", pkg);
-        clazz.put("name", name);
+        put(output, "class", clazz);
+        safePut(clazz, "package", pkg);
+        safePut(clazz, "name", name);
 
         return output;
     }
-    
+
     public static JsonNode toJson(List<CGClass> classes) {
         ArrayNode output = new ArrayNode(JsonNodeFactory.instance);
-        for (CGClass c: classes) {
+        for (CGClass c : classes) {
             output.add(toJson(c));
         }
         return output;
@@ -62,64 +71,56 @@ public class JsonNodeParser {
 
     public static JsonNode toJson(CGClass clazz) {
         ObjectNode output = objectNode();
-        
-        output.put("className", clazz.className);
-        output.put("extends", clazz.superClassName);
-        
-        ArrayNode method = output.arrayNode();
-        output.put("methods", method);
-        
-        for (CGMethod m: clazz.methods) {
-            // TODO finish me.. tired
+
+        safePut(output, "className", clazz.className);
+        safePut(output, "extends", clazz.superClassName);
+
+        ArrayNode methods = output.arrayNode();
+        put(output, "methods", methods);
+
+        for (CGMethod m : clazz.methods) {
+            methods.add(toJson(m));
         }
-        
-        return output;
-    }
-    
-    public static JsonNode toJson(JavaClass jc, Method[] methods) {
-        ObjectNode output = objectNode();
-
-        output.put("package", jc.getPackageName());
-        output.put("class", jc.getClassName());
-
-        output.put("extends", jc.getSuperclassName());
-
-        if (jc.getInterfaceNames() != null && jc.getInterfaceNames().length > 0) {
-            ArrayNode an = output.arrayNode();
-            output.put("implements", an);
-            for (String i : jc.getInterfaceNames()) {
-                an.add(i);
-            }
-        }
-        
-        ArrayNode an = output.arrayNode();
-        output.put("methods", an);
 
         return output;
     }
 
-    public static JsonNode toJson(InvokeInstruction ii, ConstantPoolGen cp) {
+    public static JsonNode toJson(CGMethod m) {
         ObjectNode output = objectNode();
+        output.put("methodName", m.methodName);
 
-        output.put("name", ii.getMethodName(cp));
-        output.put("returning", toJsonFromClass(ii.getReturnType(cp).toString()));
-
-        if (ii.getArgumentTypes(cp) != null && ii.getArgumentTypes(cp).length > 0) {
-            ArrayNode an = output.arrayNode();
-            output.put("arguments", an);
-            for (Type type : ii.getArgumentTypes(cp)) {
-                an.add(toJsonFromClass(type.toString()));
-            }
+        ArrayNode arguments = toArray(m.argumentTypes);
+        if (arguments != null) {
+            output.put("arguments", arguments);
         }
 
-        if (ii.getExceptions() != null && ii.getExceptions().length > 0) {
-            ArrayNode an = output.arrayNode();
-            output.put("throws", an);
-            for (Class c : ii.getExceptions()) {
-                an.add(toJsonFromClass(c.getName().toString()));
+        ArrayNode throwz = toArray(m.throwing);
+        if (throwz != null) {
+            output.put("throws", throwz);
+        }
+
+        output.put("returns", m.returnType);
+
+        if (m.invokedBy != null && !m.invokedBy.isEmpty()) {
+            ArrayNode invokedBy = output.arrayNode();
+            output.put("invokedBy", invokedBy);
+            for (CGMethod ib : m.invokedBy) {
+                invokedBy.add(toJson(ib));
             }
         }
 
         return output;
+    }
+
+    public static ArrayNode toArray(List<String> strings) {
+        if (strings != null && !strings.isEmpty()) {
+            ArrayNode output = new ArrayNode(JsonNodeFactory.instance);
+            for (String string : strings) {
+                output.add(string);
+            }
+            return output;
+        } else {
+            return null;
+        }
     }
 }

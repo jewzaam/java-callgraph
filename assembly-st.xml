@@ -14,6 +14,8 @@
       <unpack>true</unpack>
       <includes>
         <include>org.apache.bcel:bcel</include>
+        <include>com.fasterxml.jackson.core:jackson-core</include>
+        <include>com.fasterxml.jackson.core:jackson-databind</include>
       </includes>
       <scope>provided</scope>
     </dependencySet>
@@ -22,6 +24,7 @@
     <fileSet>
       <includes>
         <include>gr/gousiosg/javacg/stat/*.class</include>
+        <include>gr/gousiosg/javacg/stat/model/*.class</include>
       </includes>
       <directory>target/classes</directory>
       <outputDirectory>/</outputDirectory>

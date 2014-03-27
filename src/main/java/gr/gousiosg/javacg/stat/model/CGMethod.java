@@ -63,11 +63,11 @@ public class CGMethod {
         return cgm;
     }
 
-    public static CGMethod create(JavaClass jc, InvokeInstruction ii) {
-        ConstantPoolGen cpg = new ConstantPoolGen(jc.getConstantPool());
+    public static CGMethod create(JavaClass jc, MethodGen mg, InvokeInstruction ii) {
+        ConstantPoolGen cpg = mg.getConstantPool();
 
         CGMethod cgm = new CGMethod();
-        cgm.className = jc.getClassName();
+        cgm.className = ii.getReferenceType(cpg).toString();
         cgm.methodName = ii.getMethodName(cpg);
         cgm.returnType = ii.getReturnType(cpg).toString();
         for (Class c : ii.getExceptions()) {

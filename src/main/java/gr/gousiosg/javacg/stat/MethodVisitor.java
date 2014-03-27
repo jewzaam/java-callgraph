@@ -28,7 +28,6 @@
 package gr.gousiosg.javacg.stat;
 
 import org.apache.bcel.classfile.JavaClass;
-import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.ConstantPushInstruction;
 import org.apache.bcel.generic.EmptyVisitor;
 import org.apache.bcel.generic.INVOKEINTERFACE;
@@ -48,14 +47,12 @@ import org.apache.bcel.generic.ReturnInstruction;
  */
 public class MethodVisitor extends EmptyVisitor {
 
-    JavaClass visitedClass;
+    private final JavaClass visitedClass;
     private final MethodGen mg;
-    private final ConstantPoolGen cp;
 
     public MethodVisitor(MethodGen m, JavaClass jc) {
         visitedClass = jc;
         mg = m;
-        cp = mg.getConstantPool();
     }
 
     public void start() {

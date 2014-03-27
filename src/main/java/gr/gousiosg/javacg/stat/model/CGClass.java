@@ -11,6 +11,7 @@ import java.util.List;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.InvokeInstruction;
+import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.ReferenceType;
 
 /**
@@ -40,9 +41,8 @@ public class CGClass {
         return cgc;
     }
     
-    public static CGClass create(JavaClass jc, InvokeInstruction ii) {
-        ConstantPoolGen cpg = new ConstantPoolGen(jc.getConstantPool());
-        ReferenceType rt = ii.getReferenceType(cpg);
+    public static CGClass create(JavaClass jc, MethodGen mg, InvokeInstruction ii) {
+        ReferenceType rt = ii.getReferenceType(mg.getConstantPool());
 
         CGClass cgc = new CGClass();
 

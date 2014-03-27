@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Method;
-import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.InvokeInstruction;
 import org.apache.bcel.generic.MethodGen;
 
@@ -29,7 +28,7 @@ public class CallGraphCache {
         return className;
     }
 
-    public static void register(CGClass cgc) {
+    protected static void register(CGClass cgc) {
         if (cacheClass.containsKey(cgc.key())) {
             return;
         }
@@ -37,7 +36,7 @@ public class CallGraphCache {
         cacheClass.put(cgc.key(), cgc);
     }
 
-    private static void register(CGMethod cgm) {
+    protected static void register(CGMethod cgm) {
         if (cacheMethod.containsKey(cgm.key())) {
             return;
         }
@@ -47,27 +46,39 @@ public class CallGraphCache {
     }
 
     public static void register(JavaClass jc, MethodGen mg) {
+//        System.out.println("register(JavaClass, MethodGen): " + jc.getClassName() + ", " + mg.getName());
+        
         register(CGClass.create(jc));
         register(CGMethod.create(jc, mg));
     }
 
     public static void register(JavaClass jc, MethodGen mg, InvokeInstruction ii) {
+//        System.out.println("register(JavaClass, MethodGen, InvokeInstruction): " + jc.getClassName() + ", " + mg.getName());
         // register caller class and method
-        register(CGClass.create(jc));
-        CGMethod caller = CGMethod.create(jc, mg);
-        register(caller);
-        
+        CGClass callerClass = CGClass.create(jc);
+        register(callerClass);
+        CGMethod callerMethod = CGMethod.create(jc, mg);
+        register(callerMethod);
+        callerClass.methods.add(callerMethod);
+
         // register target class and method
-        register(CGClass.create(jc, ii));
-        CGMethod target = CGMethod.create(jc, ii);
-        register(target);
-        
+        CGClass targetClass = CGClass.create(jc, mg, ii);
+        register(targetClass);
+        CGMethod targetMethod = CGMethod.create(jc, mg, ii);
+        register(targetMethod);
+        targetClass.methods.add(targetMethod);
+
         // add caller / target references
-        caller.invoking.add(target);
-        target.invokedBy.add(caller);
+        callerMethod.invoking.add(targetMethod);
+        targetMethod.invokedBy.add(callerMethod);
+        
+//        System.out.println("class key = " + callerClass.key());
+//        System.out.println("caller key = " + callerMethod.key());
+//        System.out.println("target key = " + targetMethod.key());
     }
 
     public static void register(JavaClass jc, Method m) {
+//        System.out.println("register(JavaClass, Method): " + jc.getClassName() + ", " + m.getName());
         register(CGClass.create(jc));
         register(CGMethod.create(jc, m));
     }

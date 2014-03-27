@@ -27,14 +27,11 @@
  */
 package gr.gousiosg.javacg.stat;
 
-import org.apache.bcel.classfile.Constant;
-import org.apache.bcel.classfile.ConstantPool;
 import org.apache.bcel.classfile.EmptyVisitor;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Method;
 import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.MethodGen;
-import org.apache.bcel.generic.Type;
 
 /**
  * The simplest of class visitors, invokes the method visitor class for each method found.
